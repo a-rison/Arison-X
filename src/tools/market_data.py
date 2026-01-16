@@ -56,3 +56,42 @@ def get_historical_data(symbol: str, period: str = "1mo") -> HistoricalData:
         dates=hist.index.to_pydatetime().tolist(),
         prices=hist['Close'].tolist()
     )
+
+class TechnicalIndicators(BaseModel):
+    symbol: str
+    sma_20: Optional[float] = None
+    ema_20: Optional[float] = None
+    rsi_14: Optional[float] = None
+    timestamp: datetime
+
+def get_technical_indicators(symbol: str) -> TechnicalIndicators:
+    """
+    Calculate technical indicators (SMA, EMA, RSI) for a given symbol.
+    """
+    import pandas as pd
+    import pandas_ta as ta # noqa: F401
+
+    ticker = yf.Ticker(symbol)
+    # Get enough data to calculate indicators
+    df = ticker.history(period="6mo")
+    
+    if df.empty:
+        raise ValueError(f"No data found for {symbol}")
+
+    # Calculate Indicators using pandas_ta
+    # SMA 20
+    df['SMA_20'] = df.ta.sma(length=20)
+    # EMA 20
+    df['EMA_20'] = df.ta.ema(length=20)
+    # RSI 14
+    df['RSI_14'] = df.ta.rsi(length=14)
+
+    latest = df.iloc[-1]
+    
+    return TechnicalIndicators(
+        symbol=symbol.upper(),
+        sma_20=latest.get('SMA_20'),
+        ema_20=latest.get('EMA_20'),
+        rsi_14=latest.get('RSI_14'),
+        timestamp=latest.name.to_pydatetime() if hasattr(latest.name, 'to_pydatetime') else datetime.now()
+    )

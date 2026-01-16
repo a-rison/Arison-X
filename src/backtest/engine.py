@@ -50,14 +50,11 @@ class BacktestEngine:
         df['Strategy_Returns'] = df['Signal'].shift(1) * df['Returns'] # Shift signal to trade next bar
 
         # Metrics
-        total_return = (1 + df['Strategy_Returns']).prod() - 1
-        sharpe = df['Strategy_Returns'].mean() / df['Strategy_Returns'].std() * (252**0.5) if df['Strategy_Returns'].std() != 0 else 0
-        
-        # Max Drawdown
-        cumulative = (1 + df['Strategy_Returns']).cumprod()
-        peak = cumulative.cummax()
-        drawdown = (cumulative - peak) / peak
-        max_drawdown = drawdown.min()
+        from src.backtest.metrics import calculate_sharpe_ratio, calculate_max_drawdown, calculate_total_return
+
+        total_return = calculate_total_return(df['Strategy_Returns'])
+        sharpe = calculate_sharpe_ratio(df['Strategy_Returns'])
+        max_drawdown = calculate_max_drawdown(df['Strategy_Returns'])
 
         return BacktestResult(
             symbol="TEST", # Placeholder
